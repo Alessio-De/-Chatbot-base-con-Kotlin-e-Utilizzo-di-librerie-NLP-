@@ -1,0 +1,59 @@
+import com.github.pemistahl.lingua.api.Language
+import com.github.pemistahl.lingua.api.LanguageDetector
+import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
+import opennlp.tools.sentdetect.SentenceDetectorME
+import opennlp.tools.sentdetect.SentenceModel
+import opennlp.tools.tokenize.TokenizerME
+import opennlp.tools.tokenize.TokenizerModel
+import java.io.FileInputStream
+
+class Chatbot {
+    private val languageDetector: LanguageDetector = LanguageDetectorBuilder.fromAllLanguages().build()
+    private val sentenceDetector: SentenceDetectorME
+    private val tokenizer: TokenizerME
+
+    init {
+        val sentenceModel = SentenceModel(FileInputStream("en-sent.bin"))
+        sentenceDetector = SentenceDetectorME(sentenceModel)
+
+        val tokenizerModel = TokenizerModel(FileInputStream("en-token.bin"))
+        tokenizer = TokenizerME(tokenizerModel)
+    }
+
+    fun processInput(input: String): String {
+        val detectedLanguage = detectLanguage(input)
+        val sentences = detectSentences(input)
+        val tokens = tokenize(input)
+
+        return "Lingua rilevata: $detectedLanguage\n" +
+               "Numero di frasi: ${sentences.size}\n" +
+               "Tokens: ${tokens.joinToString(", ")}"
+    }
+
+    private fun detectLanguage(text: String): Language {
+        return languageDetector.detectLanguageOf(text)
+    }
+
+    private fun detectSentences(text: String): Array<String> {
+        return sentenceDetector.sentDetect(text)
+    }
+
+    private fun tokenize(text: String): Array<String> {
+        return tokenizer.tokenize(text)
+    }
+}
+
+fun main() {
+    val chatbot = Chatbot()
+    
+    println("Benvenuto! Scrivi qualcosa e ti mostrerò alcune analisi NLP.")
+    while (true) {
+        print("> ")
+        val input = readLine() ?: break
+        if (input.toLowerCase() == "exit") break
+        
+        val response = chatbot.processInput(input)
+        println(response)
+    }
+    println("Grazie per aver utilizzato il chatbot!")
+}
